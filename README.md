@@ -5,8 +5,10 @@ Test github repository, and JPA with Playframework
 
 ## References
 
+* [Play](http://www.playframework.org/documentation/2.0.2/ScalaTodoList)
 * [Akka 2.0](http://akka.io/)
 * [Akka Couch](https://raw.github.com/m242/akka-couch)
+* [Hibernate](http://www.hibernate.org/)
 * [MySql](http://dev.mysql.com/downloads/mysql/)
 
 
