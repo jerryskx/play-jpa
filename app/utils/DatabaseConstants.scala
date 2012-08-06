@@ -44,6 +44,23 @@ ENGINE = InnoDB;
 alter table order_log auto_increment = 1000000;
 
 alter table order_items auto_increment = 1000;
+
+
+-- -----------------------------------------------------
+Default data
+-- -----------------------------------------------------
+select * from order_log
+go
+select * from order_items
+go
+
+insert into order_log (shipto_first_name, shipto_last_name, shipto_address1, shipto_city, shipto_state, shipto_zip, order_timestamp) values ('Jerry', 'Wang', '225 S. Sepulveda Blvd', 'Manhattan Beach', 'CA', '90266', now())
+go
+
+
+--insert into order_items (order_id, sku, price, status) values (1000000, '123abc', 14.99,'NEW')
+insert into order_items (order_id, sku, price, status) values (1000000, '345def', 18.99,'NEW')
+go
 */
 object DatabaseConstants {
   final val TABLE_ORDER_LOG = "order_log"
