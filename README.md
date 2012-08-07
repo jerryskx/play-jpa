@@ -1,7 +1,7 @@
-play-jpa
+Akka JPA for Playframework
 ========
 
-Test github repository, and JPA with Playframework
+Create JPA library for Playframework.
 
 ## References
 
