@@ -4,7 +4,8 @@ import akka.util.Timeout
 import akka.util.duration._
 import akka.pattern.ask
 import akka.dispatch.Await
-import akkajpa._
+import akkajpa.{JpaActorSystem, Read, Create, Update, Delete, Query, Transaction}
+import javax.persistence.EntityManager
 
 /**
  * Created with IntelliJ IDEA.
@@ -40,5 +41,8 @@ object JPA {
 
   def query[T](clazz:Class[T] ,hql:String, params: (String, Any)*): List[T] =
     Await.result(JpaActorSystem.supervisor ? Query(hql, params: _*), dur).asInstanceOf[List[T]]
+
+  def transaction(f:EntityManager => Any): AnyRef =
+    Await.result(JpaActorSystem.supervisor ? Transaction(f), dur).asInstanceOf[AnyRef]
 
 }

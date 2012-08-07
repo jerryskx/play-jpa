@@ -24,28 +24,25 @@ class JpaActor extends Actor with Logger {
   var db: Option[EntityManager] = None
 
   override def preStart() {
-    logger debug "PreStart in JpaActor"
-//    initEntityManager()
+    debug("PreStart in JpaActor: initialize EntityManager")
     debug("persistenceUnit -> " + persistenceUnit)
-    val em = play.db.jpa.JPA.em(persistenceUnit)
-    db = Some(em)
+    db = Some(play.db.jpa.JPA.em(persistenceUnit))
   }
 
   override def postStop() {
-    logger warn "postStop JpaActor"
+    warn("PostStop JpaActor: close EntityManager")
     db.map(_.close())
     db = None
   }
 
   def receive = {
-
     case "Attack ships on fire off the shoulder of Orion." => {
       debug("Received stop message")
       context stop self
     }
 
     case Create(entity) => {
-      db.map (em => {
+      execute (em => {
         var tx:EntityTransaction = null
         try {
           tx = em.getTransaction
@@ -64,11 +61,11 @@ class JpaActor extends Actor with Logger {
       })
     }
     case Read(clazz,id) => {
-      db.map(em => sender ! em.find(clazz,id))
+      execute (em => sender ! em.find(clazz,id))
     }
 
     case Update(entity) => {
-      db.map (em => {
+      execute (em => {
         var tx:EntityTransaction = null
         try {
           tx = em.getTransaction
@@ -87,7 +84,7 @@ class JpaActor extends Actor with Logger {
       })
     }
     case Delete(entity) => {
-      db.map(em=>{
+      execute (em=>{
         var tx:EntityTransaction = null
         try {
           tx = em.getTransaction
@@ -106,7 +103,7 @@ class JpaActor extends Actor with Logger {
       })
     }
     case Query(hql, params @ _*) => {
-      db.map (em => {
+      execute (em => {
         val query = em.createQuery(hql)
         params.foreach(_ match {
           case (key, value) => query.setParameter(key,value)
@@ -115,9 +112,37 @@ class JpaActor extends Actor with Logger {
       })
     }
 
+    case Transaction(f) => {
+      execute (em => {
+        var tx:EntityTransaction = null
+        try {
+          tx = em.getTransaction
+          tx.begin()
+          val result = f(em)
+          tx.commit()
+
+          sender ! result
+        } catch {
+          case e: Exception => {
+            try { tx.rollback() } catch { case e: Exception => e.printStackTrace()}
+            error("Failed to run transaction", e)
+            throw e
+          }
+        }
+      })
+    }
+
     // Add any other messages you see fit here. Compaction, multi-get, etc.
-    case _ => debug("Received unknown message")
+    case _ => warn("Received unknown message")
   }
 
   private def toList(jlist: java.util.List[_]) = new JListWrapper[AnyRef](jlist.asInstanceOf[java.util.List[AnyRef]]).toList
+
+  private def execute(f:EntityManager => Unit):Unit = {
+    db.map (em => {
+      f(em)
+      em.clear()  // Clear the persistence context, causing all managed entities to become detached.
+    })
+
+  }
 }

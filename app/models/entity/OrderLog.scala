@@ -36,6 +36,7 @@ object OrderLog {
 }
 
 @Entity
+@Cacheable(false)     // disable 2nd level cache
 @Table(name = TABLE_ORDER_LOG)
 class OrderLog extends Serializable {
   @Id
@@ -72,6 +73,7 @@ class OrderLog extends Serializable {
 //  var orderTimestamp: Option[Calendar] = _
 
   // Not Scala List; it's unfortunate that even with @CollectionType annotation, at this point, Hibernate only accept Java Collections (List, Set, Map)  (may be with custom PersistenceCollection it will be doable)
+//  @OneToMany(cascade = Array(CascadeType.ALL), fetch = FetchType.LAZY, mappedBy = "orderLog", orphanRemoval = true)
   @OneToMany(cascade = Array(CascadeType.ALL), fetch = FetchType.EAGER, mappedBy = "orderLog", orphanRemoval = true)
   var orderItems: ju.List[OrderItem] = _
 

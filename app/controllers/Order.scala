@@ -5,6 +5,7 @@ import utils.Logger
 import services.JPA
 import models.entity.{OrderItem, OrderLog}
 import scala.collection.JavaConversions._
+import org.hibernate.Hibernate
 
 /**
  * Created with IntelliJ IDEA.
@@ -20,6 +21,10 @@ object Order extends Controller with Logger {
 
   def test() = Action { request =>
 
+    println("----- " + new java.util.Date())
+
+//    testTnx
+
     testQuery()
 
     testPersist()
@@ -31,16 +36,33 @@ object Order extends Controller with Logger {
     Ok(views.html.playjpa("Test","Test Complete"))
   }
 
-  private def printOrder(ord:OrderLog):Unit = {
+  private def printOrder(ord:OrderLog, printItems:Boolean = false):Unit = {
     debug("--------------------------------------------------")
     debug(" Order Id: " + ord.id)
     debug(" Order Time: " + ord.orderTimestamp.getTime)
     debug(" addr 1 " + ord.shiptoAddress1);
     ord.shiptoAddress2.map(adr2 => debug(" addr 2 " + adr2));
-    ord.orderItems.foreach(oi=>debug("   " + oi.sku + " - $" + oi.price))
+    if (printItems)
+      ord.orderItems.foreach(oi=>debug("   " + oi.sku + " - $" + oi.price))
   }
 
 
+
+  // Test transaction
+  // Warning: do not reference any methods belong to this object; Akka (on a separate thread) probably won't be able to reference it
+  //   minimize transaction logic as transaction with long computation will block Akka actor.
+  private def testTnx():Unit = {
+    // (this test focusing on testing initializing lazy collections within session; to test it make sure change
+    //   OrderLog fetch strategy to LAZY on orderitems)
+    val ord = JPA.transaction {
+      em =>
+        val entity = em.find(classOf[OrderLog], 1000000)
+        Hibernate.initialize(entity.orderItems)
+        entity
+    }
+
+    printOrder(ord.asInstanceOf[OrderLog],true)
+  }
 
   // Test query
   private def testQuery():Unit = {
@@ -57,7 +79,6 @@ object Order extends Controller with Logger {
     JPA.query(classOf[OrderLog],"from OrderLog as o where o.shiptoFirstName =:firstname and o.shiptoLastName = :lastname",
       ("firstname" -> "Jerry"),("lastname" -> "Wang"))
       .map(printOrder(_))
-
   }
 
   // Test write / persist

@@ -2,6 +2,7 @@ package akkajpa
 
 import akka.actor.{Props, ActorSystem}
 import play.api.Logger
+import javax.persistence.EntityManager
 
 /**
  * Created with IntelliJ IDEA.
@@ -32,3 +33,4 @@ case class Read[T](clazz: Class[T], id: Any)
 case class Update(obj: AnyRef)
 case class Delete(obj: AnyRef)
 case class Query(query: String, params: (String, Any)*)
+case class Transaction(f:EntityManager=>Any)

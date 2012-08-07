@@ -23,6 +23,7 @@ object OrderItem {
 }
 
 @Entity
+@Cacheable(false)
 @Table(name = TABLE_ORDER_ITEMS)
 class OrderItem extends Serializable  {
 
