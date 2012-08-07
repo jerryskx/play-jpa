@@ -36,7 +36,7 @@ class JpaActor extends Actor with Logger {
   }
 
   def receive = {
-    case "Attack ships on fire off the shoulder of Orion." => {
+    case JpaActorSystem.STOP_JPA_ACTOR => {
       debug("Received stop message")
       context stop self
     }

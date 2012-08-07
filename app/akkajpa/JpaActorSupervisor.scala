@@ -15,6 +15,9 @@ import utils.Logger
  * To change this template use File | Settings | File Templates.
  */
 
+object JpaActorSupervisor {
+  val DISPATCHER = "akkajpa-dispatcher"
+}
 class JpaActorSupervisor extends Actor with Logger {
   var jpaActor: Option[ActorRef] = None
 //  val logger = Logger
@@ -41,39 +44,44 @@ class JpaActorSupervisor extends Actor with Logger {
 
   override def postStop() {
     warn("Stopping JpaActorSupervisor")
-    jpaActor.foreach(_ ! "Attack ships on fire off the shoulder of Orion." )
+    jpaActor.foreach(_ ! JpaActorSystem.STOP_JPA_ACTOR )
     // TYRELL: The light that burns twice as bright burns for half as long -
     //         and you have burned so very, very brightly, Roy.
   }
 
   def initActor() {
     debug("Initializing JpaActor")
-    jpaActor = Some(context.watch(context.actorOf(Props[JpaActor]
-      .withRouter(RoundRobinRouter(5, supervisorStrategy = supervisorStrategy))
-      .withDispatcher(JpaActorSystem.DISPATCHER), name = "JpaActor")))
+    // Chapter 5.10 Routing Scala (Akka Documentation PDF Release 2.1 Page 232)
+
+    // create 5 routees with "supervisorStrategy" and use RR default dispatcher
+    val router = RoundRobinRouter(nrOfInstances = 5, supervisorStrategy = supervisorStrategy)
+
+    // create JpaActor with RoundRobinRouter and playjpa-dispatcher
+    val children = context.actorOf(
+      Props[JpaActor].withRouter(router).withDispatcher(JpaActorSupervisor.DISPATCHER),
+      name = "JpaActor")
+
+    context.watch(children)  // watch over my children
+    jpaActor = Some(children)
   }
 
   def receive = {
-    case Terminated(actorRef) if Some(actorRef) == jpaActor => {
+    case Terminated(actorRef) if Some(actorRef) == jpaActor => {    // children are gone (JPA Actors are all dead); re-init them
       debug("JpaActor ended")
       jpaActor = None
-      context.system.scheduler.scheduleOnce(1 minute, self, "Don't you die on me!")
+      context.system.scheduler.scheduleOnce(1 minute, self, JpaActorSystem.RESTART_JPA_ACTOR)
       debug("Scheduled restart of JpaActor")
     }
 
-    // http://tvtropes.org/pmwiki/pmwiki.php/Main/HowDareYouDieOnMe
-    case "Don't you die on me!" => {
+    case JpaActorSystem.RESTART_JPA_ACTOR => {
       debug("Restarting JpaActor")
       initActor()
     }
 
-    // This is obfuscated. You really want the variable "together" to be "message"
-    // and the variable "moving" to be "act".
-    case together => {
-//      debug("that's forward the message")
+    case it => {
       jpaActor match {
-        case Some(moving) => moving forward together // All that for this LOC?
-        case None => context.system.scheduler.scheduleOnce(1 minute, self, together)
+        case Some(child) => child forward it      // "it" will be the "message"
+        case None => context.system.scheduler.scheduleOnce(1 minute, self, it)   // no child (actor) yet; wait for a min; hopefully, child will be back in a min
       }
     }
   }
