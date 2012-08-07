@@ -1,12 +1,10 @@
 package services
 
-//import play.db.jpa.{JPA => PJPA}
 import akka.util.Timeout
 import akka.util.duration._
 import akka.pattern.ask
 import akka.dispatch.Await
-import akkajpa.{JpaActorSystem, Query}
-import models.entity.OrderLog
+import akkajpa._
 
 /**
  * Created with IntelliJ IDEA.
@@ -31,8 +29,16 @@ object JPA {
   implicit lazy val dur = 15 seconds
   implicit lazy val timeout = Timeout(dur)
 
-  def query[T](clazz:Class[T] ,hql:String, params: (String, AnyRef)*): List[T] = {
+  def find[T <: AnyRef](clazz:Class[T] , id:Any): Option[T] =
+    Option(Await.result(JpaActorSystem.supervisor ? Read(clazz,id), dur).asInstanceOf[T])
+
+  def persist(entity:AnyRef):Unit = Await.result(JpaActorSystem.supervisor ? Create(entity), dur)
+
+  def merge[T <: AnyRef](entity:T):T = Await.result(JpaActorSystem.supervisor ? Update(entity), dur).asInstanceOf[T]
+
+  def remove[T <: AnyRef](entity:T):Unit = Await.result(JpaActorSystem.supervisor ? Delete(entity), dur)
+
+  def query[T](clazz:Class[T] ,hql:String, params: (String, Any)*): List[T] =
     Await.result(JpaActorSystem.supervisor ? Query(hql, params: _*), dur).asInstanceOf[List[T]]
-  }
 
 }

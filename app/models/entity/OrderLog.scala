@@ -19,6 +19,22 @@ import java.{util => ju, lang => jl}
  * To change this template use File | Settings | File Templates.
  */
 
+object OrderLog {
+  def apply(firstName:String, lastName:String, addr1: String, addr2:Option[String],
+             city:String, state:String, zip:String) = {
+    val order = new OrderLog()
+    order.shiptoFirstName = firstName
+    order.shiptoLastName = lastName
+    order.shiptoAddress1 = addr1
+    order.shiptoAddress2 = addr2
+    order.shiptoCity = city
+    order.shiptoState = state
+    order.shiptoZip = zip
+    order.orderTimestamp = Calendar.getInstance()
+    order
+  }
+}
+
 @Entity
 @Table(name = TABLE_ORDER_LOG)
 class OrderLog extends Serializable {
@@ -55,8 +71,17 @@ class OrderLog extends Serializable {
 //  @Type (`type` = "jpa.OptionCalendar" )
 //  var orderTimestamp: Option[Calendar] = _
 
+  // Not Scala List; it's unfortunate that even with @CollectionType annotation, at this point, Hibernate only accept Java Collections (List, Set, Map)  (may be with custom PersistenceCollection it will be doable)
   @OneToMany(cascade = Array(CascadeType.ALL), fetch = FetchType.EAGER, mappedBy = "orderLog", orphanRemoval = true)
   var orderItems: ju.List[OrderItem] = _
+
+  @Transient
+  def addItem(item:OrderItem) = {
+    if(orderItems == null)
+      orderItems = new ju.ArrayList[OrderItem]()
+    orderItems.add(item)
+    item.orderLog = this
+  }
 
 //  @Transient
 //  def scalaItems: List[OrderItem] = orderItems

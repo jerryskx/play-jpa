@@ -1,7 +1,7 @@
 package akkajpa
 
 import akka.actor.Actor
-import javax.persistence.EntityManager
+import javax.persistence.{EntityTransaction, EntityManager}
 
 //import play.api.Logger
 import utils.Logger
@@ -44,22 +44,80 @@ class JpaActor extends Actor with Logger {
       context stop self
     }
 
-    case Query(hql, params @ _*) => {
-      debug ("Query: " + hql)
-      params.foreach(_ match {
-        case (key, value) => println(key + " -> " + value.toString)
-      })
-      var result:List[AnyRef] = Nil
+    case Create(entity) => {
       db.map (em => {
-        sender ! toList(em.createQuery(hql).getResultList)
+        var tx:EntityTransaction = null
+        try {
+          tx = em.getTransaction
+          tx.begin()
+          em.persist(entity)
+          tx.commit()
+
+          sender ! entity
+        } catch {
+          case e: Exception => {
+            try { tx.rollback() } catch { case e: Exception => e.printStackTrace()}
+            error("Failed to persist entity", e)
+            throw e
+          }
+        }
       })
-      result
+    }
+    case Read(clazz,id) => {
+      db.map(em => sender ! em.find(clazz,id))
+    }
+
+    case Update(entity) => {
+      db.map (em => {
+        var tx:EntityTransaction = null
+        try {
+          tx = em.getTransaction
+          tx.begin()
+          val res = em.merge(entity)
+          tx.commit()
+
+          sender ! res
+        } catch {
+          case e: Exception => {
+            try { tx.rollback() } catch { case e: Exception => e.printStackTrace()}
+            error("Failed to merge entity", e)
+            throw e
+          }
+        }
+      })
+    }
+    case Delete(entity) => {
+      db.map(em=>{
+        var tx:EntityTransaction = null
+        try {
+          tx = em.getTransaction
+          tx.begin()
+          em.remove(em.merge(entity)) // reattached entity to session before delete
+          tx.commit()
+
+          sender ! entity
+        } catch {
+          case e: Exception => {
+            try { tx.rollback() } catch { case e: Exception => e.printStackTrace()}
+            error("Failed to merge entity", e)
+            throw e
+          }
+        }
+      })
+    }
+    case Query(hql, params @ _*) => {
+      db.map (em => {
+        val query = em.createQuery(hql)
+        params.foreach(_ match {
+          case (key, value) => query.setParameter(key,value)
+        })
+        sender ! toList(query.getResultList)
+      })
     }
 
     // Add any other messages you see fit here. Compaction, multi-get, etc.
     case _ => debug("Received unknown message")
   }
-
 
   private def toList(jlist: java.util.List[_]) = new JListWrapper[AnyRef](jlist.asInstanceOf[java.util.List[AnyRef]]).toList
 }

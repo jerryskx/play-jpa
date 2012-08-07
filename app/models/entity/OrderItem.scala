@@ -1,13 +1,8 @@
 package models.entity
 
 import javax.persistence._
-import java.util.Calendar
 import utils.DatabaseConstants._
 
-
-// todo
-import scala.collection.JavaConversions._
-import java.{util => ju, lang => jl}
 
 /**
  * Created with IntelliJ IDEA.
@@ -16,6 +11,16 @@ import java.{util => ju, lang => jl}
  * Time: 3:39 PM
  * To change this template use File | Settings | File Templates.
  */
+
+object OrderItem {
+  def apply(sku:String, price: Float) = {
+    val item = new OrderItem
+    item.sku = sku
+    item.price = price
+    item.status = "NEW"
+    item
+  }
+}
 
 @Entity
 @Table(name = TABLE_ORDER_ITEMS)
@@ -30,7 +35,7 @@ class OrderItem extends Serializable  {
   var sku:String = _
 
   @Column(name = COL_PRICE)
-  var price: jl.Float= _
+  var price: Float= _
 
   @Column(name = COL_STATUS)
   var status:String = _
