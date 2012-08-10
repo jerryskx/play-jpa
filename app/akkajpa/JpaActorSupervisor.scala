@@ -4,7 +4,6 @@ import akka.util.duration._
 import akka.actor._
 import akka.routing.RoundRobinRouter
 import akka.actor.SupervisorStrategy.{Restart, Stop}
-//import play.api.Logger
 import utils.Logger
 
 /**
@@ -16,14 +15,17 @@ import utils.Logger
  */
 
 object JpaActorSupervisor {
-  val DISPATCHER = "akkajpa-dispatcher"
+  val DISPATCHER = "akkajpa.dispatcher"
+
+  lazy val conf = com.typesafe.config.ConfigFactory.load()
+  lazy val maxRestartPerMin = try { conf.getInt("akkajpa.maxRestartPerMin") } catch { case e => 3}
+  lazy val numberOfInstances = try { conf.getInt("akkajpa.numberOfInstances") } catch { case e => 5}
 }
 class JpaActorSupervisor extends Actor with Logger {
   var jpaActor: Option[ActorRef] = None
-//  val logger = Logger
 
-  // Try to restart the actor 3 times within a minute, otherwise stop it.
-  override val supervisorStrategy = OneForOneStrategy(maxNrOfRetries = 3,
+  // Try to restart the actor 'n' times within a minute, otherwise stop it.
+  override val supervisorStrategy = OneForOneStrategy(maxNrOfRetries = JpaActorSupervisor.maxRestartPerMin,
     withinTimeRange = 1 minute) {
 
     case aie: ActorInitializationException => {
@@ -45,18 +47,16 @@ class JpaActorSupervisor extends Actor with Logger {
   override def postStop() {
     warn("Stopping JpaActorSupervisor")
     jpaActor.foreach(_ ! JpaActorSystem.STOP_JPA_ACTOR )
-    // TYRELL: The light that burns twice as bright burns for half as long -
-    //         and you have burned so very, very brightly, Roy.
   }
 
   def initActor() {
     debug("Initializing JpaActor")
     // Chapter 5.10 Routing Scala (Akka Documentation PDF Release 2.1 Page 232)
 
-    // create 5 routees with "supervisorStrategy" and use RR default dispatcher
-    val router = RoundRobinRouter(nrOfInstances = 5, supervisorStrategy = supervisorStrategy)
+    // create routees with "supervisorStrategy" and use RR default dispatcher
+    val router = RoundRobinRouter(nrOfInstances = JpaActorSupervisor.numberOfInstances, supervisorStrategy = supervisorStrategy)
 
-    // create JpaActor with RoundRobinRouter and playjpa-dispatcher
+    // create JpaActor with RoundRobinRouter and akkajpa.dispatcher
     val children = context.actorOf(
       Props[JpaActor].withRouter(router).withDispatcher(JpaActorSupervisor.DISPATCHER),
       name = "JpaActor")
@@ -66,14 +66,14 @@ class JpaActorSupervisor extends Actor with Logger {
   }
 
   def receive = {
-    case Terminated(actorRef) if Some(actorRef) == jpaActor => {    // children are gone (JPA Actors are all dead); re-init them
+    case Terminated(actorRef) if Some(actorRef) == jpaActor => {    // children are gone (JPA Actors are all dead); revive them in a min
       debug("JpaActor ended")
       jpaActor = None
       context.system.scheduler.scheduleOnce(1 minute, self, JpaActorSystem.RESTART_JPA_ACTOR)
       debug("Scheduled restart of JpaActor")
     }
 
-    case JpaActorSystem.RESTART_JPA_ACTOR => {
+    case JpaActorSystem.RESTART_JPA_ACTOR => {   // receive restart request, that's revive my actors
       debug("Restarting JpaActor")
       initActor()
     }

@@ -21,14 +21,13 @@ object JpaActorSystem {
   val STOP_JPA_ACTOR = "Attack ships on fire off the shoulder of Orion."
   val RESTART_JPA_ACTOR = "Don't you die on me!"
 
-//  val DISPATCHER = "akkajpa-dispatcher"
-  val DISPATCHER = "akkajpa-supervisor-dispatcher"
+  val DISPATCHER = "akkajpa.dispatcher"
   val system = ActorSystem("JpaActorSystem")
 
   val logger = Logger
   logger.debug("In JpaActorSystem")
 
-  // create JpaActorSupervisor Actor at system (top) level, using "akkajpa-supervisor-dispatcher" config
+  // create JpaActorSupervisor Actor at system (top) level, using "akkajpa.dispatcher" config
   val supervisor = JpaActorSystem.system.actorOf(Props[JpaActorSupervisor]
     .withDispatcher(DISPATCHER), name = "jpaActorSupervisor")
 }

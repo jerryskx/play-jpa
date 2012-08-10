@@ -1,6 +1,5 @@
 package jpa
 
-import org.hibernate.Hibernate
 import scala.{Array => A}
 import org.hibernate._
 import engine.spi.SessionImplementor

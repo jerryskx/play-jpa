@@ -3,7 +3,6 @@ package akkajpa
 import akka.actor.Actor
 import javax.persistence.{EntityTransaction, EntityManager}
 
-//import play.api.Logger
 import utils.Logger
 import scala.collection.JavaConversions._
 
@@ -16,11 +15,9 @@ import scala.collection.JavaConversions._
  */
 
 class JpaActor extends Actor with Logger {
-//  val logger = Logger
-
 
   lazy val conf = com.typesafe.config.ConfigFactory.load()
-  lazy val persistenceUnit = try { conf.getString("playjpa.name") } catch { case e => "default"}
+  lazy val persistenceUnit = try { conf.getString("akkajpa.name") } catch { case e => "default"}
   var db: Option[EntityManager] = None
 
   override def preStart() {

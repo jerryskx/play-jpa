@@ -1,7 +1,7 @@
 Akka JPA for Playframework
 ========
 
-Create JPA library for Playframework.
+Create JPA library using Akka for Playframework.
 
 ## References
 
