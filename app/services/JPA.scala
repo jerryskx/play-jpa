@@ -6,12 +6,6 @@ import akka.pattern.ask
 import akka.dispatch.Await
 import akka.jpa._
 import javax.persistence.EntityManager
-//import akka.jpa.Transaction
-//import akka.jpa.Read
-//import akka.jpa.Update
-//import akka.jpa.Create
-//import akka.jpa.Delete
-//import akka.jpa.Query
 
 /**
  * Created with IntelliJ IDEA.

@@ -70,7 +70,7 @@ object Order extends Controller with Logger {
     JPA.find(classOf[OrderLog],1000000).map(printOrder(_)).getOrElse(debug("not found"))
 
     // test query with 1 result
-    JPA.querySingleResult(classOf[OrderLog],"from OrderLog order by order_id asc ").map(printOrder(_))
+    JPA.querySingleResult(classOf[OrderLog],"from OrderLog order by order_id desc ").map(printOrder(_))
 
     // test query with order by
     JPA.query(classOf[OrderLog],"from OrderLog order by order_id asc ").map(printOrder(_))

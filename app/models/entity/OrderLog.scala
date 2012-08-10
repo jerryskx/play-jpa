@@ -3,7 +3,6 @@ package models.entity
 import javax.persistence._
 import java.util.Calendar
 import utils.DatabaseConstants._
-import reflect.BeanProperty
 import org.hibernate.annotations.{CollectionType, Type}
 
 
