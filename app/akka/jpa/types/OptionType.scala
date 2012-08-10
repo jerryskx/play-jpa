@@ -1,4 +1,4 @@
-package jpa
+package akka.jpa.types
 
 import scala.{Array => A}
 import org.hibernate._
@@ -20,12 +20,14 @@ import java.io._
 
 abstract class OptionType extends UserType {
 
-  def mytype:AbstractSingleColumnStandardBasicType[_]
+  def mytype: AbstractSingleColumnStandardBasicType[_]
 
   def sqlTypes() = A(mytype.sqlType())
+
   def returnedClass() = classOf[Option[_]]
 
   def equals(p1: Object, p2: Object) = p1 == p2
+
   def hashCode(p1: Object) = p1.hashCode()
 
   def nullSafeGet(rs: ResultSet, names: A[String], session: SessionImplementor, owner: Object) = {
@@ -44,6 +46,7 @@ abstract class OptionType extends UserType {
   def disassemble(value: Object) = value.asInstanceOf[Serializable]
 
   def assemble(cached: Serializable, owner: Object) = cached
+
   def replace(original: Object, target: Object, owner: Object) = original
 }
 

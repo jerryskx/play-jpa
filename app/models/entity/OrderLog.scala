@@ -55,7 +55,7 @@ class OrderLog extends Serializable {
 
   // http://dzone.com/snippets/mapping-scalas-option
   @Column(name = COL_SHIPTO_ADDRESS2)
-  @Type (`type` = "jpa.OptionString" )
+  @Type (`type` = "akka.jpa.types.OptionString" )
   var shiptoAddress2: Option[String] = _
 
   @Column(name = COL_SHIPTO_CITY)
@@ -69,7 +69,7 @@ class OrderLog extends Serializable {
 
   @Column(name = COL_ORDERTIMESTAMP)
   var orderTimestamp: Calendar = _
-//  @Type (`type` = "jpa.OptionCalendar" )
+//  @Type (`type` = "akka.jpa.types.OptionCalendar" )
 //  var orderTimestamp: Option[Calendar] = _
 
   // Not Scala List; it's unfortunate that even with @CollectionType annotation, at this point, Hibernate only accept Java Collections (List, Set, Map)  (may be with custom PersistenceCollection it will be doable)

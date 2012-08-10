@@ -1,4 +1,4 @@
-package jpa
+package akka.jpa.types
 
 import org.hibernate.usertype.UserCollectionType
 import org.hibernate.persister.collection.CollectionPersister

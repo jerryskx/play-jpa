@@ -1,4 +1,4 @@
-package akkajpa
+package akka.jpa
 
 import akka.util.duration._
 import akka.actor._

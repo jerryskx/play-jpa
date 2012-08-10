@@ -1,4 +1,4 @@
-package akkajpa
+package akka.jpa
 
 import akka.actor.{Props, ActorSystem}
 import play.api.Logger
@@ -36,5 +36,7 @@ case class Create(obj: AnyRef)
 case class Read[T](clazz: Class[T], id: Any)
 case class Update(obj: AnyRef)
 case class Delete(obj: AnyRef)
-case class Query(query: String, params: (String, Any)*)
+case class Query(query: String, hints:QueryConfig, params: (String, Any)*)
 case class Transaction(f:EntityManager=>Any)
+
+case class QueryConfig(cacheMode:Option[String]=None, readOnly:Option[Boolean] = None, fetchSize:Option[Int] = None, maxResults:Option[Int]=None)

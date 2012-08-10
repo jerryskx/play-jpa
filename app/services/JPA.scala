@@ -4,8 +4,14 @@ import akka.util.Timeout
 import akka.util.duration._
 import akka.pattern.ask
 import akka.dispatch.Await
-import akkajpa.{JpaActorSystem, Read, Create, Update, Delete, Query, Transaction}
+import akka.jpa._
 import javax.persistence.EntityManager
+//import akka.jpa.Transaction
+//import akka.jpa.Read
+//import akka.jpa.Update
+//import akka.jpa.Create
+//import akka.jpa.Delete
+//import akka.jpa.Query
 
 /**
  * Created with IntelliJ IDEA.
@@ -37,7 +43,10 @@ object JPA {
   def remove[T <: AnyRef](entity:T):Unit = Await.result(JpaActorSystem.supervisor ? Delete(entity), dur)
 
   def query[T](clazz:Class[T] ,hql:String, params: (String, Any)*): List[T] =
-    Await.result(JpaActorSystem.supervisor ? Query(hql, params: _*), dur).asInstanceOf[List[T]]
+    Await.result(JpaActorSystem.supervisor ? Query(hql, QueryConfig(), params: _*), dur).asInstanceOf[List[T]]
+
+  def querySingleResult[T](clazz:Class[T] ,hql:String, params: (String, Any)*): Option[T] =
+    Some(Await.result(JpaActorSystem.supervisor ? Query(hql, QueryConfig(maxResults = Some(1)), params: _*), dur).asInstanceOf[List[T]].head)
 
   def transaction(f:EntityManager => Any): AnyRef =
     Await.result(JpaActorSystem.supervisor ? Transaction(f), dur).asInstanceOf[AnyRef]

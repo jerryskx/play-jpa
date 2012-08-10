@@ -1,7 +1,8 @@
-package akkajpa
+package akka.jpa
 
 import akka.actor.Actor
 import javax.persistence.{EntityTransaction, EntityManager}
+import org.hibernate.ejb.QueryHints
 
 import utils.Logger
 import scala.collection.JavaConversions._
@@ -99,9 +100,15 @@ class JpaActor extends Actor with Logger {
         }
       })
     }
-    case Query(hql, params @ _*) => {
+    case Query(hql, hints, params @ _*) => {
       execute (em => {
         val query = em.createQuery(hql)
+
+        hints.cacheMode.map(query.setHint(QueryHints.HINT_CACHE_MODE, _))
+        hints.fetchSize.map(query.setHint(QueryHints.HINT_FETCH_SIZE, _))
+        hints.readOnly.map(query.setHint(QueryHints.HINT_READONLY, _))
+        hints.maxResults.map(query.setMaxResults(_))
+
         params.foreach(_ match {
           case (key, value) => query.setParameter(key,value)
         })
