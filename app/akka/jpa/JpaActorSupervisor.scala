@@ -46,7 +46,7 @@ class JpaActorSupervisor extends Actor with Logger {
 
   override def postStop() {
     warn("Stopping JpaActorSupervisor")
-    jpaActor.foreach(_ ! JpaActorSystem.STOP_JPA_ACTOR )
+    broadcast(JpaActorSystem.STOP_JPA_ACTOR)
   }
 
   def initActor() {
@@ -65,6 +65,8 @@ class JpaActorSupervisor extends Actor with Logger {
     jpaActor = Some(children)
   }
 
+  def broadcast(msg:Any) = for (i <- 1 to JpaActorSupervisor.numberOfInstances) jpaActor.map(_ ! msg)
+
   def receive = {
     case Terminated(actorRef) if Some(actorRef) == jpaActor => {    // children are gone (JPA Actors are all dead); revive them in a min
       debug("JpaActor ended")
@@ -76,6 +78,10 @@ class JpaActorSupervisor extends Actor with Logger {
     case JpaActorSystem.RESTART_JPA_ACTOR => {   // receive restart request, that's revive my actors
       debug("Restarting JpaActor")
       initActor()
+    }
+
+    case JpaActorSystem.REFRESH_EM => {   // broadcast to all children to refresh their entity manager
+      broadcast(JpaActorSystem.REFRESH_EM)
     }
 
     case it => {

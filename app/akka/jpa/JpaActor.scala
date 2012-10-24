@@ -29,7 +29,7 @@ class JpaActor extends Actor with Logger {
 
   override def postStop() {
     warn("PostStop JpaActor: close EntityManager")
-    db.map(_.close())
+    db.map(em => {if (em.isOpen) em.close()})
     db = None
   }
 
@@ -37,6 +37,12 @@ class JpaActor extends Actor with Logger {
     case JpaActorSystem.STOP_JPA_ACTOR => {
       debug("Received stop message")
       context stop self
+    }
+
+    case JpaActorSystem.REFRESH_EM => {
+      println("reload em")
+      postStop()
+      preStart()
     }
 
     case Create(entity) => {
@@ -51,7 +57,7 @@ class JpaActor extends Actor with Logger {
           sender ! entity
         } catch {
           case e: Exception => {
-            try { tx.rollback() } catch { case e: Exception => e.printStackTrace()}
+            if (tx != null) try { tx.rollback() } catch { case e: Exception => e.printStackTrace()}
             error("Failed to persist entity", e)
             throw e
           }
@@ -74,7 +80,7 @@ class JpaActor extends Actor with Logger {
           sender ! res
         } catch {
           case e: Exception => {
-            try { tx.rollback() } catch { case e: Exception => e.printStackTrace()}
+            if (tx != null) try { tx.rollback() } catch { case e: Exception => e.printStackTrace()}
             error("Failed to merge entity", e)
             throw e
           }
@@ -93,7 +99,7 @@ class JpaActor extends Actor with Logger {
           sender ! entity
         } catch {
           case e: Exception => {
-            try { tx.rollback() } catch { case e: Exception => e.printStackTrace()}
+            if (tx != null) try { tx.rollback() } catch { case e: Exception => e.printStackTrace()}
             error("Failed to merge entity", e)
             throw e
           }
@@ -128,7 +134,7 @@ class JpaActor extends Actor with Logger {
           sender ! result
         } catch {
           case e: Exception => {
-            try { tx.rollback() } catch { case e: Exception => e.printStackTrace()}
+            if (tx != null) try { tx.rollback() } catch { case e: Exception => e.printStackTrace()}
             error("Failed to run transaction", e)
             throw e
           }
@@ -143,7 +149,7 @@ class JpaActor extends Actor with Logger {
   private def toList(jlist: java.util.List[_]) = new JListWrapper[AnyRef](jlist.asInstanceOf[java.util.List[AnyRef]]).toList
 
   private def execute(f:EntityManager => Unit):Unit = {
-    db.map (em => {
+    db.map (em => synchronized {
       f(em)
       em.clear()  // Clear the persistence context, causing all managed entities to become detached.
     })

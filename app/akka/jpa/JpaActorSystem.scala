@@ -20,6 +20,7 @@ object JpaActorSystem {
 
   val STOP_JPA_ACTOR = "Attack ships on fire off the shoulder of Orion."
   val RESTART_JPA_ACTOR = "Don't you die on me!"
+  val REFRESH_EM = "Reload EM"
 
   val DISPATCHER = "akkajpa.dispatcher"
   val system = ActorSystem("JpaActorSystem")
