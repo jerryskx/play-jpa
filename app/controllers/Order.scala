@@ -67,19 +67,19 @@ object Order extends Controller with Logger {
   // Test query
   private def testQuery():Unit = {
     // test search by ID
-    JPA.find(classOf[OrderLog],1000000).map(printOrder(_)).getOrElse(debug("not found"))
+    JPA.find[OrderLog](1000000).map(printOrder(_)).getOrElse(debug("not found"))
 
     // test query with 1 result
-    JPA.querySingleResult(classOf[OrderLog],"from OrderLog order by order_id desc ").map(printOrder(_))
+    JPA.querySingleResult[OrderLog]("from OrderLog order by order_id desc ").map(printOrder(_))
 
     // test query with order by
-    JPA.query(classOf[OrderLog],"from OrderLog order by order_id asc ").map(printOrder(_))
+    JPA.query[OrderLog]("from OrderLog order by order_id asc ").map(printOrder(_))
 
     // test OptionString
-    JPA.query(classOf[OrderLog],"from OrderLog as o where o.shiptoAddress2 is not null").map(printOrder(_))
+    JPA.query[OrderLog]("from OrderLog as o where o.shiptoAddress2 is not null").map(printOrder(_))
 
     // test query with param
-    JPA.query(classOf[OrderLog],"from OrderLog as o where o.shiptoFirstName =:firstname and o.shiptoLastName = :lastname",
+    JPA.query[OrderLog]("from OrderLog as o where o.shiptoFirstName =:firstname and o.shiptoLastName = :lastname",
       ("firstname" -> "Jerry"),("lastname" -> "Wang"))
       .map(printOrder(_))
   }
@@ -94,7 +94,7 @@ object Order extends Controller with Logger {
 
   // Test update / merge
   private def testMerge():Unit = {
-    JPA.query(classOf[OrderLog],"from OrderLog as o where o.shiptoFirstName = :firstname", ("firstname" -> TEST_USER_FIRST_NAME)).map(ord => {
+    JPA.query[OrderLog]("from OrderLog as o where o.shiptoFirstName = :firstname", ("firstname" -> TEST_USER_FIRST_NAME)).map(ord => {
       ord.shiptoAddress1 = "TEST UPDATE addr1 2"
       ord.orderItems.foreach (oi => oi.price = oi.price + 1)
       JPA.merge(ord)
@@ -104,7 +104,7 @@ object Order extends Controller with Logger {
 
   // Test delete / remove
   private def testRemove():Unit = {
-    JPA.query(classOf[OrderLog],"from OrderLog as o where o.shiptoFirstName = :firstname", ("firstname" -> TEST_USER_FIRST_NAME)).map(ord => {
+    JPA.query[OrderLog]("from OrderLog as o where o.shiptoFirstName = :firstname", ("firstname" -> TEST_USER_FIRST_NAME)).map(ord => {
       JPA.remove(ord)
     })
   }

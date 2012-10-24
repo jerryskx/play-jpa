@@ -24,11 +24,11 @@ import javax.persistence.EntityManager
  */
 
 object JPA {
-  implicit lazy val dur = 15 seconds
+  implicit lazy val dur = 30 seconds
   implicit lazy val timeout = Timeout(dur)
 
-  def find[T <: AnyRef](clazz:Class[T] , id:Any): Option[T] =
-    Option(Await.result(JpaActorSystem.supervisor ? Read(clazz,id), dur).asInstanceOf[T])
+  def find[T <: AnyRef](id:Any)(implicit manifest: Manifest[T]): Option[T] =
+    Option(Await.result(JpaActorSystem.supervisor ? Read(manifest.erasure,id), dur).asInstanceOf[T])
 
   def persist(entity:AnyRef):Unit = Await.result(JpaActorSystem.supervisor ? Create(entity), dur)
 
@@ -36,10 +36,10 @@ object JPA {
 
   def remove[T <: AnyRef](entity:T):Unit = Await.result(JpaActorSystem.supervisor ? Delete(entity), dur)
 
-  def query[T](clazz:Class[T] ,hql:String, params: (String, Any)*): List[T] =
+  def query[T](hql:String, params: (String, Any)*): List[T] =
     Await.result(JpaActorSystem.supervisor ? Query(hql, QueryConfig(), params: _*), dur).asInstanceOf[List[T]]
 
-  def querySingleResult[T](clazz:Class[T] ,hql:String, params: (String, Any)*): Option[T] =
+  def querySingleResult[T](hql:String, params: (String, Any)*): Option[T] =
     Some(Await.result(JpaActorSystem.supervisor ? Query(hql, QueryConfig(maxResults = Some(1)), params: _*), dur).asInstanceOf[List[T]].head)
 
   def transaction(f:EntityManager => Any): AnyRef =
