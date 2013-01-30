@@ -19,19 +19,6 @@ class JpaActor extends Actor with Logger {
 
   lazy val conf = com.typesafe.config.ConfigFactory.load()
   lazy val persistenceUnit = try { conf.getString("akkajpa.name") } catch { case e => "default"}
-  var db: Option[EntityManager] = None
-
-  override def preStart() {
-    debug("PreStart in JpaActor: initialize EntityManager")
-    debug("persistenceUnit -> " + persistenceUnit)
-    db = Some(play.db.jpa.JPA.em(persistenceUnit))
-  }
-
-  override def postStop() {
-    warn("PostStop JpaActor: close EntityManager")
-    db.map(em => {if (em.isOpen) em.close()})
-    db = None
-  }
 
   def receive = {
     case JpaActorSystem.STOP_JPA_ACTOR => {
@@ -149,10 +136,9 @@ class JpaActor extends Actor with Logger {
   private def toList(jlist: java.util.List[_]) = new JListWrapper[AnyRef](jlist.asInstanceOf[java.util.List[AnyRef]]).toList
 
   private def execute(f:EntityManager => Unit):Unit = {
-    db.map (em => synchronized {
-      f(em)
-      em.clear()  // Clear the persistence context, causing all managed entities to become detached.
-    })
-
+    val em = play.db.jpa.JPA.em(persistenceUnit)
+    f(em)
+    em.clear()  // Clear the persistence context, causing all managed entities to become detached.
+    em.close()  // close entity manager
   }
 }
