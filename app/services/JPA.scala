@@ -37,10 +37,16 @@ object JPA {
   def remove[T <: AnyRef](entity:T):Unit = Await.result(JpaActorSystem.supervisor ? Delete(entity), dur)
 
   def query[T](hql:String, params: (String, Any)*): List[T] =
-    Await.result(JpaActorSystem.supervisor ? Query(hql, QueryConfig(), params: _*), dur).asInstanceOf[List[T]]
+    query(hql, QueryConfig(), params: _*)
 
-  def querySingleResult[T](hql:String, params: (String, Any)*): Option[T] =
-    Some(Await.result(JpaActorSystem.supervisor ? Query(hql, QueryConfig(maxResults = Some(1)), params: _*), dur).asInstanceOf[List[T]].head)
+  def query[T](hql:String, config: QueryConfig, params: (String, Any)*): List[T] =
+    Await.result(JpaActorSystem.supervisor ? Query(hql, config, params: _*), dur).asInstanceOf[List[T]]
+
+  def querySingleResult[T](hql:String, params: (String, Any)*): Option[T] = {
+    val results = query[T](hql, params: _*)
+    if (results.length > 0) Some(results.head)
+    else None
+  }
 
   def transaction(f:EntityManager => Any): AnyRef =
     Await.result(JpaActorSystem.supervisor ? Transaction(f), dur).asInstanceOf[AnyRef]
