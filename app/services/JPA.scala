@@ -42,11 +42,8 @@ object JPA {
   def query[T](hql:String, config: QueryConfig, params: (String, Any)*): List[T] =
     Await.result(JpaActorSystem.supervisor ? Query(hql, config, params: _*), dur).asInstanceOf[List[T]]
 
-  def querySingleResult[T](hql:String, params: (String, Any)*): Option[T] = {
-    val results = query[T](hql, params: _*)
-    if (results.length > 0) Some(results.head)
-    else None
-  }
+  def querySingleResult[T](hql:String, params: (String, Any)*): Option[T] =
+    query[T](hql, QueryConfig(maxResults=Some(1)), params: _*).headOption
 
   def transaction(f:EntityManager => Any): AnyRef =
     Await.result(JpaActorSystem.supervisor ? Transaction(f), dur).asInstanceOf[AnyRef]
