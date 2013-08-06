@@ -45,7 +45,7 @@ abstract class OptionType extends UserType {
 
   def disassemble(value: Object) = value.asInstanceOf[Serializable]
 
-  def assemble(cached: Serializable, owner: Object) = cached
+  def assemble(cached: Serializable, owner: Object) = cached.asInstanceOf[java.lang.Object]
 
   def replace(original: Object, target: Object, owner: Object) = original
 }

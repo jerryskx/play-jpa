@@ -1,6 +1,7 @@
 package akka.jpa
 
-import akka.util.duration._
+import scala.concurrent.duration._
+import play.api.libs.concurrent.Execution.Implicits._
 import akka.actor._
 import akka.routing.RoundRobinRouter
 import akka.actor.SupervisorStrategy.{Restart, Stop}
@@ -18,8 +19,8 @@ object JpaActorSupervisor {
   val DISPATCHER = "akkajpa.dispatcher"
 
   lazy val conf = com.typesafe.config.ConfigFactory.load()
-  lazy val maxRestartPerMin = try { conf.getInt("akkajpa.maxRestartPerMin") } catch { case e => 3}
-  lazy val numberOfInstances = try { conf.getInt("akkajpa.numberOfInstances") } catch { case e => 5}
+  lazy val maxRestartPerMin = try { conf.getInt("akkajpa.maxRestartPerMin") } catch { case e: Throwable => 3}
+  lazy val numberOfInstances = try { conf.getInt("akkajpa.numberOfInstances") } catch { case e: Throwable => 5}
 }
 class JpaActorSupervisor extends Actor with Logger {
   var jpaActor: Option[ActorRef] = None
@@ -29,11 +30,11 @@ class JpaActorSupervisor extends Actor with Logger {
     withinTimeRange = 1 minute) {
 
     case aie: ActorInitializationException => {
-      debug("Exception starting JpaActor: " + aie.toString)
+      error("Exception starting JpaActor: " + aie.toString)
       Stop
     }
     case e => {
-      debug("Exception in JpaActor: " + e.toString)
+      error("Exception in JpaActor: " + e.toString)
       Restart
     }
   }

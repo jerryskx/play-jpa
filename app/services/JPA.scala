@@ -1,11 +1,12 @@
 package services
 
 import akka.util.Timeout
-import akka.util.duration._
 import akka.pattern.ask
-import akka.dispatch.Await
 import akka.jpa._
 import javax.persistence.EntityManager
+
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
 /**
  * Created with IntelliJ IDEA.
@@ -28,7 +29,7 @@ object JPA {
   implicit lazy val timeout = Timeout(dur)
 
   def find[T <: AnyRef](id:Any)(implicit manifest: Manifest[T]): Option[T] =
-    Option(Await.result(JpaActorSystem.supervisor ? Read(manifest.erasure,id), dur).asInstanceOf[T])
+    Await.result(JpaActorSystem.supervisor ? Read(manifest.runtimeClass,id), dur).asInstanceOf[Option[T]]
 
   def persist(entity:AnyRef):Unit = Await.result(JpaActorSystem.supervisor ? Create(entity), dur)
 

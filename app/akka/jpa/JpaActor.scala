@@ -4,8 +4,7 @@ import akka.actor.Actor
 import javax.persistence.{EntityTransaction, EntityManager}
 import org.hibernate.ejb.QueryHints
 
-import utils.Logger
-import scala.collection.JavaConversions._
+import scala.collection.convert.Wrappers.JListWrapper
 
 /**
  * Created with IntelliJ IDEA.
@@ -15,10 +14,10 @@ import scala.collection.JavaConversions._
  * To change this template use File | Settings | File Templates.
  */
 
-class JpaActor extends Actor with Logger {
+class JpaActor extends Actor with utils.Logger {
 
   lazy val conf = com.typesafe.config.ConfigFactory.load()
-  lazy val persistenceUnit = try { conf.getString("akkajpa.name") } catch { case e => "default"}
+  lazy val persistenceUnit = try { conf.getString("akkajpa.name") } catch { case e: Throwable => "default"}
 
   def receive = {
     case JpaActorSystem.STOP_JPA_ACTOR => {
@@ -52,7 +51,7 @@ class JpaActor extends Actor with Logger {
       })
     }
     case Read(clazz,id) => {
-      execute (em => sender ! em.find(clazz,id))
+      execute (em => sender ! Option(em.find(clazz,id)))
     }
 
     case Update(entity) => {
